@@ -15,11 +15,14 @@ def _modbus(data):
         for _ in range(8): crc=(crc>>1)^0xA001 if crc&1 else crc>>1
     return bytes([crc&0xff, crc>>8])
 
-def _events(path):
-    d=open(path,'rb').read(); assert d[:8]==b'btsnoop\x00'
+BTSNOOP_EPOCH_US=0x00DCDDB30F2F8000  # микросекунды от 0000-01-01 до 1970-01-01 (формат btsnoop)
+
+def _events(src):
+    d=src if isinstance(src,(bytes,bytearray)) else open(src,'rb').read(); assert d[:8]==b'btsnoop\x00'
     dl=struct.unpack('>I',d[12:16])[0]; off=16; reasm={}; ev=[]
     while off+24<=len(d):
         il=struct.unpack('>I',d[off+4:off+8])[0]; fl=struct.unpack('>I',d[off+8:off+12])[0]
+        ts=(struct.unpack('>q',d[off+16:off+24])[0]-BTSNOOP_EPOCH_US)/1e6  # местное время телефона как «наивный» unix-ts (Android пишет local time)
         off+=24; pkt=d[off:off+il]; off+=il; recv=fl&1
         if dl==1002:
             if not pkt: continue
@@ -31,28 +34,34 @@ def _events(path):
         if pb in (0,2):
             if len(payload)<4: reasm[handle]=[None,bytearray(payload)]; continue
             l2len,cid=struct.unpack('<HH',payload[:4]); need=4+l2len; buf=bytearray(payload)
-            if len(buf)>=need: _a(ev,bytes(buf[4:need]),recv); reasm.pop(handle,None)
+            if len(buf)>=need: _a(ev,bytes(buf[4:need]),recv,ts); reasm.pop(handle,None)
             else: reasm[handle]=[need,buf,cid]
         elif pb==1 and handle in reasm and reasm[handle][0] is not None:
             reasm[handle][1]+=payload; need,buf,cid=reasm[handle]
-            if len(buf)>=need: _a(ev,bytes(buf[4:need]),recv); reasm.pop(handle,None)
+            if len(buf)>=need: _a(ev,bytes(buf[4:need]),recv,ts); reasm.pop(handle,None)
     return ev
-def _a(ev,att,recv):
+def _a(ev,att,recv,ts=None):
     if not att: return
     op=att[0]; b=att[1:]
-    if op in (0x12,0x52) and len(b)>=2 and struct.unpack('<H',b[:2])[0]==CMD: ev.append(('CMD',b[2:]))
-    elif op==0x1B and len(b)>=2 and struct.unpack('<H',b[:2])[0]==ANS: ev.append(('ANS',b[2:]))
+    if op in (0x12,0x52) and len(b)>=2 and struct.unpack('<H',b[:2])[0]==CMD: ev.append(('CMD',b[2:],ts))
+    elif op==0x1B and len(b)>=2 and struct.unpack('<H',b[:2])[0]==ANS: ev.append(('ANS',b[2:],ts))
 
 def frames(path):
     """Логические кадры: команды как есть; ответы реассемблируются по длине [1]."""
+    return [(k,f) for k,f,_ in frames_ts(path)]
+
+def frames_ts(src):
+    """То же, что frames(), но с меткой времени btsnoop третьим элементом (местное время телефона в виде
+    «наивного» unix-времени: datetime.utcfromtimestamp даёт часы телефона).
+    src — путь к файлу или содержимое btsnoop (bytes)."""
     out=[]; buf=bytearray()
-    for kind,val in _events(path):
-        if kind=='CMD': out.append(('CMD',bytes(val))); continue
+    for kind,val,ts in _events(src):
+        if kind=='CMD': out.append(('CMD',bytes(val),ts)); continue
         buf+=val
         while len(buf)>=2 and buf[0]==0xAA:
             ln=buf[1]
             if ln<4 or len(buf)<ln: break
-            out.append(('ANS',bytes(buf[:ln]))); del buf[:ln]
+            out.append(('ANS',bytes(buf[:ln]),ts)); del buf[:ln]
         if buf and buf[0]!=0xAA: buf=bytearray()  # сброс мусора
     return out
 
