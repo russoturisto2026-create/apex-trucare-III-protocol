@@ -225,10 +225,16 @@ def main():
         if extra_bits:
             err(f'a1/{obj:02x}[{byte}]', f'в эфире встречаются неописанные биты 0x{extra_bits:02x}')
 
+    print('\n[команды] наблюдения в окне')
     for cm in F.COMMANDS:
+        cid = f'a1/{cm["obj"]:02x}'
+        cnt = sum(1 for ts, k, f in win if k == 'CMD' and len(f) > 5 and f[3] == 0xA1 and f[4] == cm['obj'])
+        print(f'  {cid}: {cnt} — {cm["status"]}')
+        if cm['status'] == '🟢' and cnt < 2 and not cm.get('screen_check'):
+            err(cid, f'статус 🟢 при {cnt} наблюдении(ях) в окне без сверки с экраном (screen_check)')
         for st in cm.get('steps', []):
             if st not in steps_have:
-                err(f'a1/{cm["obj"]:02x}', f'шаг {st:03d} отсутствует в RESEARCH.md')
+                err(cid, f'шаг {st:03d} отсутствует в RESEARCH.md')
 
     print(f'\n# итог: ошибок {errors}, предупреждений {warns}')
     return 1 if errors else 0

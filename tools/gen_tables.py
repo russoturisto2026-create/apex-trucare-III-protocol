@@ -3,7 +3,9 @@
 
 Заменяет содержимое между маркерами `<!-- gen:ИМЯ -->` и `<!-- /gen:ИМЯ -->`:
   PROTOCOL.md: commands, a3_00, a3_00_unknown, a3_0c, a3_0c_unknown, a1_32, a1_34, a1_11, a1_02
-  OBJECTS.md:  obj_a3_00, obj_a3_0c (побайтовая карта по архивным захватам окна исследования)
+  OBJECTS.md:  obj_a3_00, obj_a3_0c, obj_a3_31, obj_a3_0a, obj_a3_0b, obj_a3_08, obj_a3_07, obj_a3_21,
+               obj_a3_26 (побайтовая карта по архивным захватам окна исследования)
+  RESEARCH.md: research_objects, research_commands (сводка текущего состояния)
 
 Использование: gen_tables.py [--check]   (--check — только сообщить, есть ли расхождения)
 """
@@ -122,19 +124,59 @@ def table_commands():
     return NL.join(rows)
 
 
-def objects_table(obj):
+_FRAMES = None
+
+
+def window_frames():
+    global _FRAMES
+    if _FRAMES is None:
+        import verify_fields as V
+        frames, _ = V.load_frames([])
+        w0 = datetime.datetime(*F.WINDOW_START)
+        _FRAMES = [(ts, k, f) for ts, k, f in frames if V.local_dt(ts) >= w0]
+    return _FRAMES
+
+
+def objects_table(obj, idx):
+    """Побайтовая карта объекта a3/obj по кадрам окна; idx — показываемая запись."""
     import object_map as OM
-    import verify_fields as V
-    frames, _ = V.load_frames([])
-    w0 = datetime.datetime(*F.WINDOW_START)
-    pls = [f[6:-2] for ts, k, f in frames
-           if k == 'ANS' and V.local_dt(ts) >= w0 and len(f) > 8 and f[3] == 0xA3 and f[4] == obj and f[5] == 0xAA]
+    fs = [f for ts, k, f in window_frames() if k == 'ANS' and len(f) > 8 and f[3] == 0xA3 and f[4] == obj]
+    idxs = sorted({f[5] for f in fs})
+    pls = [f[6:-2] for f in fs if f[5] == idx]
     L = min(len(p) for p in pls)
-    var = {o for o in range(L) if len({p[o] for p in pls})>1}
-    b = dict(pls=pls, sample=pls[-1][:L], var=var, known=OM.known_for(0xA3, obj), L=L, idxs=[0xAA])
-    head = (f'Источник: все архивные захваты окна исследования (tools/gen_tables.py); пример — последний кадр '
-            f'({len(pls)} кадров).')
-    return head + NL + NL + OM.md(0xA3, obj, b).replace('\n', NL)
+    var = {o for o in range(L) if len({p[o] for p in pls}) > 1}
+    b = dict(pls=pls, sample=pls[-1][:L], var=var, known=OM.known_for(0xA3, obj), L=L, idxs=idxs)
+    note = f', показана запись idx{idx:02x}' if len(idxs) > 1 else ''
+    head = f'Кадров записи в окне: {len(pls)}{note}; пример — последний кадр; C/V — по всем кадрам записи.'
+    return OM.md(0xA3, obj, b).replace('\n', NL) + NL + NL + head
+
+
+def research_objects():
+    lines = []
+    for obj, title, length, sec in ((0x00, 'основной статус', 88, '§4.1'), (0x0C, 'краткий статус', 20, '§4.2')):
+        fs = [f for f in F.FIELDS if f['st']['obj'] == obj]
+        cov = set()
+        for f in fs:
+            cov |= set(range(f['st']['off'], f['st']['off'] + f['st']['size']))
+        green = [f for f in fs if f['status'] == '🟢']
+        yellow = [f for f in fs if f['status'] != '🟢']
+        s = (f'- `a3/{obj:02x}` — {title}: разобрано {len(cov)} из {length} байт; полей 🟢 {len(green)}, '
+             f'🟡 {len(yellow)}')
+        if yellow:
+            s += ' (' + ', '.join(f['name'] + f' — off{f["st"]["off"]}' for f in yellow) + ')'
+        lines.append(s + f'. Таблица — PROTOCOL.md {sec}.')
+    return NL.join(lines)
+
+
+def research_commands():
+    lines = []
+    for cm in sorted(F.COMMANDS, key=lambda c: c['obj']):
+        st = cm['status'] + (f' (шаги {steps_ref(cm["steps"])})' if cm['steps'] else '')
+        nf = [f for f in F.FIELDS if f.get('cmd') and f['cmd']['obj'] == cm['obj']]
+        cnt = sum(1 for ts, k, f in window_frames() if k == 'CMD' and f[3] == 0xA1 and f[4] == cm['obj'])
+        extra = f'; в окне команд: {cnt}' + (f'; полей в реестре: {len(nf)}' if nf else '')
+        lines.append(f'- `a1/{cm["obj"]:02x}` — {cm["purpose"]} — {st}{extra}.')
+    return NL.join(lines)
 
 
 def render(name):
@@ -148,8 +190,17 @@ def render(name):
         'a1_34': lambda: table_cmd(0x34),
         'a1_11': lambda: table_cmd(0x11),
         'a1_02': lambda: table_cmd(0x02),
-        'obj_a3_00': lambda: objects_table(0x00),
-        'obj_a3_0c': lambda: objects_table(0x0C),
+        'obj_a3_00': lambda: objects_table(0x00, 0xAA),
+        'obj_a3_0c': lambda: objects_table(0x0C, 0xAA),
+        'obj_a3_31': lambda: objects_table(0x31, 0x00),
+        'obj_a3_0a': lambda: objects_table(0x0A, 0x00),
+        'obj_a3_0b': lambda: objects_table(0x0B, 0x00),
+        'obj_a3_08': lambda: objects_table(0x08, 0x00),
+        'obj_a3_07': lambda: objects_table(0x07, 0xAA),
+        'obj_a3_21': lambda: objects_table(0x21, 0x00),
+        'obj_a3_26': lambda: objects_table(0x26, 0x00),
+        'research_objects': research_objects,
+        'research_commands': research_commands,
     }[name]()
 
 
@@ -173,7 +224,7 @@ def process(path, check):
 if __name__ == '__main__':
     check = '--check' in sys.argv
     bad = False
-    for doc in ('PROTOCOL.md', 'OBJECTS.md'):
+    for doc in ('PROTOCOL.md', 'OBJECTS.md', 'RESEARCH.md'):
         ch = process(os.path.join(ROOT, doc), check)
         print(f'{doc}: ' + (('расходятся с реестром: ' if check else 'обновлены: ') + ', '.join(ch) if ch else 'совпадают с реестром'))
         bad |= bool(ch)
