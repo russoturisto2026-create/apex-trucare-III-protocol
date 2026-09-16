@@ -13,6 +13,7 @@ import hci_frames as H
 # Реестр уже разобранных/кандидатных полей: (класс,код) -> (offset, size, подпись, кодир./значение, статус)
 KNOWN = {
  (0xA3,0x00): [
+    (2,1,"скорость болюса","0=Нормальная, 1=Низкая","🟢"),
     (16,2,"счётчик поданного инсулина","шаг 0,025 Ед","🟡"),
     (14,2,"автовыключение экрана","×0,1 с (150=15,0 с)","🟢"),
     (20,2,"лимит дневной дозы","единицы (100/250)","🟢"),
@@ -65,8 +66,13 @@ def md(cls, obj, b, note=""):
         if f:
             o,sz,lbl,enc,st=f; raw=sample[o:o+sz].hex()
             cv='V' if any((o+i) in var for i in range(sz)) else 'C'
-            out.append(f"| {o}..{o+sz-1} | `{raw}` | {cv} | {lbl} | {enc} | {st} |")
+            rng=f"{o}" if sz==1 else f"{o}..{o+sz-1}"
+            out.append(f"| {rng} | `{raw}` | {cv} | {lbl} | {enc} | {st} |")
             off=o+sz
+        elif off%2 or field_at(known,off+1):
+            cv='V' if off in var else 'C'
+            out.append(f"| {off} | `{sample[off:off+1].hex()}` | {cv} | — | u8={sample[off]} | 🔲 |")
+            off+=1
         else:
             v=struct.unpack('<H',sample[off:off+2])[0]
             cv='V' if (off in var or (off+1) in var) else 'C'
