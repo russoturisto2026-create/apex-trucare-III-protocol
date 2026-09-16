@@ -12,3 +12,4 @@ SHA-256 считается по исходному файлу-артефакту
 |---|---|---|---|---|---|---|
 | 1 | hci | btsnoop-захват подключения помпы (сессия 16:21–16:25 16.09.2026) | `btsnoop_hci_260916_162139.log` | `18fa271a6e2422b06fdd1108c813e1d0dd3d292390037b66e60829314d4c400d` | 001 | `etap-A-transport-gatt/001-hci.zip` |
 | 2 | screen | Экран «Устройства» после подключения (серийный номер замаскирован) | `001_screen_devices_redacted.jpg` | `fb8645114872b7e5c47b2d0985f0b8e65933dc82efd122241bc1723bcaa923f6` | 001 | `etap-A-transport-gatt/001-screens.zip` |
+| 3 | screen (комплект) | Скриншоты лицензионного соглашения Erwin Blueberry, Части 1–21 (33 кадра, 16:15–16:17 16.09.2026); провенанс к `user_agreement.md` | `SHA256SUMS.txt` (+ 33 × `eula_NN.jpg`) | `8346f2ae1d27d9b5ab19053339e11fec663ca081122f5fc30768e2b3b8a32916` (манифест; SHA-256 каждого кадра — внутри `SHA256SUMS.txt`) | 002 | `provenance-user-agreement/002-eula-screens.zip` |
