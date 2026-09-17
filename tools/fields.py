@@ -273,7 +273,9 @@ FIELDS = [
     # ---------------------------------------------------------------- a3/0a — текущая (последняя запущенная) ВБС
     dict(id='cur_tbr_start', name='текущая ВБС — старт', st=dict(obj=A3_0A, off=0, size=6, records=True),
          kind='time6', enc='`YY MM DD HH MM SS`', screens=[], steps=[34], materials=[38, 39, 52], status='🟢',
-         note='время старта; дублируется в байтах 7..12'),
+         note='время старта; байт 6 — разделитель `00`, затем то же время повторяется (off7)'),
+    dict(id='cur_tbr_start2', name='текущая ВБС — старт (копия)', st=dict(obj=A3_0A, off=7, size=6, records=True),
+         kind='time6', enc='`YY MM DD HH MM SS` (= старт off0)', screens=[], steps=[34], materials=[38, 39, 52], status='🟢'),
     dict(id='cur_tbr_type', name='текущая ВБС — тип', st=dict(obj=A3_0A, off=13, size=1, records=True),
          kind='enum', values={0: 'проценты', 1: 'Ед/ч'}, screens=[], steps=[34], materials=[38, 39, 52], status='🟢',
          note='как байт[0] команды a1/02'),
@@ -286,7 +288,9 @@ FIELDS = [
          note='нарастает по ходу подачи, обнуляется в конце; итог = `a3/0b`/`a3/27` off12'),
     # ---------------------------------------------------------------- a3/0b — последняя завершённая ВБС
     dict(id='last_tbr_start', name='завершённая ВБС — старт', st=dict(obj=A3_0B, off=1, size=6, records=True),
-         kind='time6', enc='`YY MM DD HH MM SS`', screens=[], steps=[34], materials=[38, 52, 54], status='🟢'),
+         kind='time6', enc='`YY MM DD HH MM SS` (байт 0 перед датой — счётчик/тип, не установлен)', screens=[], steps=[34], materials=[38, 52, 54], status='🟢'),
+    dict(id='last_tbr_start2', name='завершённая ВБС — старт (копия)', st=dict(obj=A3_0B, off=7, size=6, records=True),
+         kind='time6', enc='`YY MM DD HH MM SS` (= старт off1)', screens=[], steps=[34], materials=[38, 52, 54], status='🟢'),
     dict(id='last_tbr_type', name='завершённая ВБС — тип', st=dict(obj=A3_0B, off=13, size=1, records=True),
          kind='enum', values={0: 'проценты', 1: 'Ед/ч'}, screens=[], steps=[34], materials=[38, 52, 54], status='🟢'),
     dict(id='last_tbr_duration', name='завершённая ВБС — длительность', st=dict(obj=A3_0B, off=14, size=2, records=True),
