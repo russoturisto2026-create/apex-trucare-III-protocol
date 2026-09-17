@@ -114,6 +114,16 @@ def unknown_ranges(obj, length):
     return f'**Неразобранные смещения** ({n} из {length} байт): ' + ', '.join(rng) + ' — побайтово в `OBJECTS.md`.'
 
 
+def table_answers():
+    rows = ['| Код | Нагрузка | Назначение | Когда приходит | Статус |', '|---|---|---|---|---|']
+    for a in F.ANSWERS:
+        st = a['status'] + (f' — шаги {steps_ref(a["steps"])}' if a['steps'] else '')
+        if a.get('note'):
+            st += '; ' + a['note']
+        rows.append(f'| `0x{a["code"]:02X}` | {a["payload"]} | {a["purpose"]} | {a["when"]} | {st} |')
+    return NL.join(rows)
+
+
 def table_commands():
     rows = ['| Код | Полезная нагрузка | Назначение | Статус |', '|---|---|---|---|']
     for cm in sorted(F.COMMANDS, key=lambda c: c['obj']):
@@ -185,6 +195,7 @@ def research_commands():
 def render(name):
     return {
         'commands': table_commands,
+        'answers': table_answers,
         'a3_00': lambda: table_status(0x00),
         'a3_0c': lambda: table_status(0x0C),
         'a3_21': lambda: table_status(0x21),
