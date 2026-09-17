@@ -188,6 +188,8 @@ def render(name):
         'a3_0c': lambda: table_status(0x0C),
         'a3_21': lambda: table_status(0x21),
         'a3_27': lambda: table_status(0x27),
+        'a3_0a': lambda: table_status(0x0A),
+        'a3_0b': lambda: table_status(0x0B),
         'obj_a3_27': lambda: objects_table(0x27, 0x00),
         'obj_a3_01': lambda: objects_table(0x01, 0x00),
         'a3_00_unknown': lambda: unknown_ranges(0x00, 88),

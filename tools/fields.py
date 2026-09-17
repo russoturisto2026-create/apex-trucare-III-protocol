@@ -36,6 +36,8 @@ A3_0C = 0x0C
 A3_21 = 0x21
 A3_27 = 0x27
 A3_02 = 0x02
+A3_0A = 0x0A
+A3_0B = 0x0B
 
 FIELDS = [
     # ---------------------------------------------------------------- a1/32 байт[0] — флаги
@@ -268,6 +270,35 @@ FIELDS = [
     dict(id='tbr_log_delivered', name='журнал ВБС — подано', st=dict(obj=A3_27, off=12, size=2, records=True),
          kind='num', scale=(0.025, 'Ед'), screens=[(26, '0,65 Ед', 53), (96, '2,4 Ед', 53)],
          steps=[32], materials=[52, 53], status='🟢', note='фактически подано за время действия ВБС'),
+    # ---------------------------------------------------------------- a3/0a — текущая (последняя запущенная) ВБС
+    dict(id='cur_tbr_start', name='текущая ВБС — старт', st=dict(obj=A3_0A, off=0, size=6, records=True),
+         kind='time6', enc='`YY MM DD HH MM SS`', screens=[], steps=[34], materials=[38, 39, 52], status='🟢',
+         note='время старта; дублируется в байтах 7..12'),
+    dict(id='cur_tbr_type', name='текущая ВБС — тип', st=dict(obj=A3_0A, off=13, size=1, records=True),
+         kind='enum', values={0: 'проценты', 1: 'Ед/ч'}, screens=[], steps=[34], materials=[38, 39, 52], status='🟢',
+         note='как байт[0] команды a1/02'),
+    dict(id='cur_tbr_duration', name='текущая ВБС — длительность', st=dict(obj=A3_0A, off=14, size=2, records=True),
+         kind='num', scale=(15, 'мин'), screens=[], steps=[34], materials=[38, 39, 52], status='🟢', note='×15 мин, как байт[1] a1/02'),
+    dict(id='cur_tbr_value', name='текущая ВБС — значение', st=dict(obj=A3_0A, off=16, size=2, records=True),
+         kind='num', scale=(None, ''), enc='% или 0,025 Ед/ч по типу (значение команды a1/02)', screens=[], steps=[34], materials=[38, 39, 52], status='🟢'),
+    dict(id='cur_tbr_delivered', name='текущая ВБС — подано', st=dict(obj=A3_0A, off=18, size=2, records=True),
+         kind='num', scale=(0.025, 'Ед'), screens=[], steps=[34], materials=[38, 39, 52], status='🟢',
+         note='нарастает по ходу подачи, обнуляется в конце; итог = `a3/0b`/`a3/27` off12'),
+    # ---------------------------------------------------------------- a3/0b — последняя завершённая ВБС
+    dict(id='last_tbr_start', name='завершённая ВБС — старт', st=dict(obj=A3_0B, off=1, size=6, records=True),
+         kind='time6', enc='`YY MM DD HH MM SS`', screens=[], steps=[34], materials=[38, 52, 54], status='🟢'),
+    dict(id='last_tbr_type', name='завершённая ВБС — тип', st=dict(obj=A3_0B, off=13, size=1, records=True),
+         kind='enum', values={0: 'проценты', 1: 'Ед/ч'}, screens=[], steps=[34], materials=[38, 52, 54], status='🟢'),
+    dict(id='last_tbr_duration', name='завершённая ВБС — длительность', st=dict(obj=A3_0B, off=14, size=2, records=True),
+         kind='num', scale=(15, 'мин'), screens=[], steps=[34], materials=[38, 52, 54], status='🟢'),
+    dict(id='last_tbr_value', name='завершённая ВБС — значение', st=dict(obj=A3_0B, off=16, size=2, records=True),
+         kind='num', scale=(None, ''), enc='% или 0,025 Ед/ч по типу', screens=[], steps=[34], materials=[38, 52, 54], status='🟢'),
+    dict(id='last_tbr_end', name='завершённая ВБС — окончание', st=dict(obj=A3_0B, off=18, size=6, records=True),
+         kind='time6', enc='`YY MM DD HH MM SS`', screens=[], steps=[34], materials=[38, 52, 54], status='🟢',
+         note='время завершения; старт+длительность (120 %: 18:15+2:30=20:45, окончание 20:46, №54)'),
+    dict(id='last_tbr_delivered', name='завершённая ВБС — подано', st=dict(obj=A3_0B, off=24, size=2, records=True),
+         kind='num', scale=(0.025, 'Ед'), screens=[], steps=[34], materials=[38, 52, 54], status='🟢',
+         note='= `a3/27` off12 (6 Ед/ч → 96 = 2,4 Ед; 113 % → 26 = 0,65 Ед)'),
     dict(id='battery', name='напряжение батареи', st=dict(obj=A3_0C, off=3, size=1),
          kind='num', scale=(0.01, 'В'), screens=[(136, '1,36 В', 9)],
          steps=[3, 6], materials=[5, 9], status='🟢'),
