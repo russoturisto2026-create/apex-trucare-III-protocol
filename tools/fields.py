@@ -33,6 +33,7 @@ WINDOW_START = (2026, 9, 16, 16, 34)   # граница исследования
 
 A3_00 = 0x00
 A3_0C = 0x0C
+A3_01 = 0x01
 A3_21 = 0x21
 A3_27 = 0x27
 A3_02 = 0x02
@@ -230,6 +231,18 @@ FIELDS = [
          note='время смены базального профиля; далее в записи — 48 получасовых ставок (u16LE, 0,025 Ед/ч); '
               'суточная доза = сумма × 0,0125. Записи 00–03 совпали с экраном (18,675 / 19,2 / 20 / 3,6 Ед)'),
     # ---------------------------------------------------------------- a3/21 журнал болюсов (10 записей, новые первыми)
+    # ---------------------------------------------------------------- a3/01 — подробный журнал болюсов (128 записей, структура = a3/21)
+    dict(id='blog01_time', name='журнал болюсов (подробный) — время', st=dict(obj=A3_01, off=0, size=6, records=True),
+         kind='time6', enc='`YY MM DD HH MM SS`', screens=[], steps=[32, 40], materials=[46, 63], status='🟢',
+         note='та же структура записи, что `a3/21` (§4.4); запись 00 = последний болюс. Дата — байты 0..5 (Шаг 040)'),
+    dict(id='blog01_req', name='журнал болюсов (подробный) — простой: запрошено', st=dict(obj=A3_01, off=6, size=2, records=True),
+         kind='num', scale=(0.025, 'Ед'), screens=[], steps=[32, 40], materials=[46, 63], status='🟢'),
+    dict(id='blog01_deliv', name='журнал болюсов (подробный) — простой: подано', st=dict(obj=A3_01, off=8, size=2, records=True),
+         kind='num', scale=(0.025, 'Ед'), screens=[], steps=[32, 40], materials=[46, 63], status='🟢'),
+    dict(id='blog01_ext_prog', name='журнал болюсов (подробный) — растянутый: задано', st=dict(obj=A3_01, off=10, size=2, records=True),
+         kind='num', scale=(0.025, 'Ед'), screens=[], steps=[32, 40], materials=[46, 63], status='🟡'),
+    dict(id='blog01_ext_deliv', name='журнал болюсов (подробный) — растянутый: подано', st=dict(obj=A3_01, off=12, size=2, records=True),
+         kind='num', scale=(0.025, 'Ед'), screens=[], steps=[32, 40], materials=[46, 63], status='🟡'),
     dict(id='bolus_log_time', name='журнал болюсов — время', st=dict(obj=A3_21, off=0, size=5, records=True),
          kind='time6', enc='`YY MM DD HH MM` (байт = значение)', screens=[],
          steps=[29], materials=[46, 47], status='🟢',
