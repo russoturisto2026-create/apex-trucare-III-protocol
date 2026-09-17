@@ -2,6 +2,8 @@
 """Сбор прикладных кадров помпы из btsnoop: команды (запись в 0x0021) и ответы
 (уведомления 0x001C), с реассемблированием ответа по полю длины (байт [1]) через несколько
 уведомлений, и проверкой CRC-16/MODBUS (little-endian) последних двух байт.
+Команда длиннее MTU приходит как Prepare Write (0x16) + Execute Write (0x18) и обычная запись хвоста;
+фрагменты склеиваются, команда собирается по полю длины u16LE (байты [1..2]).
 
 Идентификационный блок команд ("APEX"+серийный номер) при печати заменяется на <identity>.
 """
@@ -40,10 +42,17 @@ def _events(src):
             reasm[handle][1]+=payload; need,buf,cid=reasm[handle]
             if len(buf)>=need: _a(ev,bytes(buf[4:need]),recv,ts); reasm.pop(handle,None)
     return ev
+_prep=[]  # фрагменты Prepare Write (0x16) к CMD до Execute Write (0x18): (смещение, данные, ts)
 def _a(ev,att,recv,ts=None):
     if not att: return
     op=att[0]; b=att[1:]
     if op in (0x12,0x52) and len(b)>=2 and struct.unpack('<H',b[:2])[0]==CMD: ev.append(('CMD',b[2:],ts))
+    elif op==0x16 and not recv and len(b)>=4 and struct.unpack('<H',b[:2])[0]==CMD:
+        _prep.append((struct.unpack('<H',b[2:4])[0],b[4:],ts))
+    elif op==0x18 and not recv and b:
+        if b[0]==1 and _prep:  # запись длиннее MTU: фрагменты склеиваются по смещению
+            ev.append(('CMD',b''.join(v for _,v,_ in sorted(_prep,key=lambda p:p[0])),_prep[0][2]))
+        _prep.clear()
     elif op==0x1B and len(b)>=2 and struct.unpack('<H',b[:2])[0]==ANS: ev.append(('ANS',b[2:],ts))
 
 def frames(path):
@@ -54,9 +63,16 @@ def frames_ts(src):
     """То же, что frames(), но с меткой времени btsnoop третьим элементом (местное время телефона в виде
     «наивного» unix-времени: datetime.utcfromtimestamp даёт часы телефона).
     src — путь к файлу или содержимое btsnoop (bytes)."""
-    out=[]; buf=bytearray()
+    out=[]; buf=bytearray(); cmd=None  # cmd: [собранные байты, ts первого фрагмента] длинной команды
+    _prep.clear()
     for kind,val,ts in _events(src):
-        if kind=='CMD': out.append(('CMD',bytes(val),ts)); continue
+        if kind=='CMD':
+            # длина команды — u16LE в байтах [1..2]; длинная команда приходит несколькими записями
+            if cmd is None and len(val)>=3 and val[1]|val[2]<<8>len(val): cmd=[bytearray(val),ts]; continue
+            if cmd is None: out.append(('CMD',bytes(val),ts)); continue
+            cmd[0]+=val; ln=cmd[0][1]|cmd[0][2]<<8
+            if len(cmd[0])>=ln: out.append(('CMD',bytes(cmd[0][:ln]),cmd[1])); cmd=None
+            continue
         buf+=val
         while len(buf)>=2 and buf[0]==0xAA:
             ln=buf[1]

@@ -149,8 +149,9 @@ def main():
         obs = obs_cmd | obs_st
         print(f'\n[{fid}] {fd["name"]} — {fd["status"]}')
         if c:
-            print(f'  команда a1/{c["obj"]:02x}[{c["byte"]}]: {sorted(obs_cmd)}; статус a3/{s["obj"]:02x} off{s["off"]}: '
-                  f'{sorted(obs_st) if len(obs_st) < 12 else "%d значений" % len(obs_st)}; совпадений связи: {n_match}')
+            big = s['size'] > 4  # таблицы печатаются числом различных значений
+            print(f'  команда a1/{c["obj"]:02x}[{c["byte"]}]: {"%d значений" % len(obs_cmd) if big else sorted(obs_cmd)}; статус a3/{s["obj"]:02x} off{s["off"]}: '
+                  f'{sorted(obs_st) if len(obs_st) < 12 and not big else "%d значений" % len(obs_st)}; совпадений связи: {n_match}')
         else:
             print(f'  статус a3/{s["obj"]:02x} off{s["off"]}: '
                   f'{sorted(obs_st) if len(obs_st) < 12 else "%d значений" % len(obs_st)}')

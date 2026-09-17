@@ -155,7 +155,8 @@ def research_objects():
     lines = []
     for obj, title, length, sec in ((0x00, 'основной статус', 88, '§4.1'), (0x0C, 'краткий статус', 20, '§4.2'),
                                     (0x21, 'журнал болюсов (одна запись)', 14, '§4.4'),
-                                    (0x27, 'журнал ВБС (одна запись)', 14, '§4.5')):
+                                    (0x27, 'журнал ВБС (одна запись)', 14, '§4.5'),
+                                    (0x07, 'калькулятор болюса', 246, '§4.9')):
         fs = [f for f in F.FIELDS if f['st']['obj'] == obj]
         cov = set()
         for f in fs:
@@ -190,6 +191,7 @@ def render(name):
         'a3_27': lambda: table_status(0x27),
         'a3_0a': lambda: table_status(0x0A),
         'a3_0b': lambda: table_status(0x0B),
+        'a3_07': lambda: table_status(0x07),
         'obj_a3_27': lambda: objects_table(0x27, 0x00),
         'obj_a3_01': lambda: objects_table(0x01, 0x00),
         'a3_00_unknown': lambda: unknown_ranges(0x00, 88),
