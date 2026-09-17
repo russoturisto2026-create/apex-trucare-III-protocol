@@ -164,22 +164,45 @@ def objects_table(obj, idx, cls=0xA3):
 
 
 def research_objects():
+    """Сводка по всем кадрам, которые присылает помпа: длина — по кадрам окна, покрытие — по реестру."""
+    titles = {0x00: ('основной статус', '§4.1'), 0x0C: ('краткий статус', '§4.2'),
+              0x21: ('журнал болюсов', '§4.4'), 0x27: ('журнал ВБС', '§4.5'),
+              0x02: ('журнал изменений базала', '§4.6'), 0x0A: ('текущая ВБС', '§4.7'),
+              0x0B: ('последняя завершённая ВБС', '§4.8'), 0x07: ('калькулятор болюса', '§4.9'),
+              0x26: ('дневные дозы (10 дней)', '§4.10'), 0x06: ('дневные дозы (длинная история)', '§4.10'),
+              0x31: ('версии прошивки и протокола', '§4.11'), 0x01: ('подробный журнал болюсов', '§4.4'),
+              0x08: ('базальные профили A–H', '§4 (каталог)')}
+    lens, recs = {}, {}
+    for ts, k, f in window_frames():
+        if k == 'ANS' and len(f) > 8 and f[3] == 0xA3:
+            lens[f[4]] = len(f) - 8
+            recs.setdefault(f[4], set()).add(f[5])
     lines = []
-    for obj, title, length, sec in ((0x00, 'основной статус', 88, '§4.1'), (0x0C, 'краткий статус', 20, '§4.2'),
-                                    (0x21, 'журнал болюсов (одна запись)', 14, '§4.4'),
-                                    (0x27, 'журнал ВБС (одна запись)', 14, '§4.5'),
-                                    (0x07, 'калькулятор болюса', 246, '§4.9')):
+    for obj in sorted(lens, key=lambda o: (o not in titles, o)):
         fs = [f for f in F.FIELDS if f['st']['obj'] == obj]
         cov = set()
         for f in fs:
             cov |= set(range(f['st']['off'], f['st']['off'] + f['st']['size']))
-        green = [f for f in fs if f['status'] == '🟢']
+        title, sec = titles.get(obj, ('назначение не установлено', '§4 (каталог)'))
+        n = len(recs[obj])
+        rec = f'{n} записей × ' if n > 1 else ''
+        s = f'- `a3/{obj:02x}` — {title}: разобрано {len(cov)} из {lens[obj]} байт ({rec}{lens[obj]} байт)'
         yellow = [f for f in fs if f['status'] != '🟢']
-        s = (f'- `a3/{obj:02x}` — {title}: разобрано {len(cov)} из {length} байт; полей 🟢 {len(green)}, '
-             f'🟡 {len(yellow)}')
         if yellow:
-            s += ' (' + ', '.join(f['name'] + f' — off{f["st"]["off"]}' for f in yellow) + ')'
+            s += '; 🟡 ' + ', '.join(f['name'] + f' — off{f["st"]["off"]}' for f in yellow)
+        if len(cov) < lens[obj]:
+            miss = [o for o in range(lens[obj]) if o not in cov]
+            rng = []
+            for o in miss:
+                if rng and rng[-1][1] == o - 1:
+                    rng[-1][1] = o
+                else:
+                    rng.append([o, o])
+            s += '; не разобрано: ' + ', '.join(str(a) if a == b else f'{a}..{b}' for a, b in rng)
         lines.append(s + f'. Таблица — PROTOCOL.md {sec}.')
+    for a in getattr(F, 'ANSWERS', []):
+        cnt = sum(1 for ts, k, f in window_frames() if k == 'ANS' and len(f) > 5 and f[3] == 0xA1 and f[4] == a['code'])
+        lines.append(f'- `a1/{a["code"]:02x}` — {a["purpose"]}: {a["status"]}; кадров в окне: {cnt}. Таблица — PROTOCOL.md §4.12.')
     return NL.join(lines)
 
 
