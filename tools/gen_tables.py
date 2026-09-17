@@ -189,6 +189,8 @@ def render(name):
         'a3_0c': lambda: table_status(0x0C),
         'a3_21': lambda: table_status(0x21),
         'a3_27': lambda: table_status(0x27),
+        'a3_26': lambda: table_status(0x26),
+        'obj_a3_06': lambda: objects_table(0x06, 0x00),
         'a3_0a': lambda: table_status(0x0A),
         'a3_0b': lambda: table_status(0x0B),
         'a3_07': lambda: table_status(0x07),

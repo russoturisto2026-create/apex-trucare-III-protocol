@@ -36,6 +36,8 @@ A3_0C = 0x0C
 A3_21 = 0x21
 A3_27 = 0x27
 A3_02 = 0x02
+A3_06 = 0x06
+A3_26 = 0x26
 A3_07 = 0x07
 A3_0A = 0x0A
 A3_0B = 0x0B
@@ -365,6 +367,31 @@ FIELDS = [
     dict(id='calc_crc', name='контрольная сумма блока калькулятора', st=dict(obj=A3_07, off=244, size=2),
          kind='num', scale=(None, ''), enc='CRC-16/MODBUS (LE) байтов 0..243 объекта; в команду `a1/15` не входит',
          steps=[36], materials=[58], status='🟢', note='сошлось у всех разных содержимых в окне'),
+    # ---------------------------------------------------------------- a3/26 (10 дней) и a3/06 (38 дней) — дневные дозы
+    dict(id='daily_bolus_26', name='дневная доза — болюс', st=dict(obj=A3_26, off=0, size=2, records=True),
+         kind='num', scale=(0.025, 'Ед'), screens=[(66, '1,65 Ед', 63), (2410, '60,25 Ед', 63)],
+         steps=[39], materials=[46, 63], status='🟢', note='суточный болюс; сумма трёх полей = итог на экране «Дневные дозы»'),
+    dict(id='daily_basal_26', name='дневная доза — базал', st=dict(obj=A3_26, off=2, size=2, records=True),
+         kind='num', scale=(0.025, 'Ед'), screens=[(641, '16,025 Ед', 63)],
+         steps=[39], materials=[46, 63], status='🟢'),
+    dict(id='daily_tbr_26', name='дневная доза — врем. базал', st=dict(obj=A3_26, off=4, size=2, records=True),
+         kind='num', scale=(0.025, 'Ед'), screens=[(185, '4,625 Ед', 63)],
+         steps=[39], materials=[46, 63], status='🟢'),
+    dict(id='daily_date_26', name='дневная доза — дата', st=dict(obj=A3_26, off=6, size=3, records=True),
+         kind='time6', enc='`YY MM DD` (3 байта, без времени); байт 9 — `00`', screens=[],
+         steps=[39], materials=[46, 63], status='🟢'),
+    dict(id='daily_bolus_06', name='дневная доза — болюс', st=dict(obj=A3_06, off=0, size=2, records=True),
+         kind='num', scale=(0.025, 'Ед'), screens=[(66, '1,65 Ед', 63), (2410, '60,25 Ед', 63)],
+         steps=[39], materials=[46, 63], status='🟢', note='суточный болюс; сумма трёх полей = итог на экране «Дневные дозы»'),
+    dict(id='daily_basal_06', name='дневная доза — базал', st=dict(obj=A3_06, off=2, size=2, records=True),
+         kind='num', scale=(0.025, 'Ед'), screens=[(641, '16,025 Ед', 63)],
+         steps=[39], materials=[46, 63], status='🟢'),
+    dict(id='daily_tbr_06', name='дневная доза — врем. базал', st=dict(obj=A3_06, off=4, size=2, records=True),
+         kind='num', scale=(0.025, 'Ед'), screens=[(185, '4,625 Ед', 63)],
+         steps=[39], materials=[46, 63], status='🟢'),
+    dict(id='daily_date_06', name='дневная доза — дата', st=dict(obj=A3_06, off=6, size=3, records=True),
+         kind='time6', enc='`YY MM DD` (3 байта, без времени); байт 9 — `00`', screens=[],
+         steps=[39], materials=[46, 63], status='🟢'),
     dict(id='battery', name='напряжение батареи', st=dict(obj=A3_0C, off=3, size=1),
          kind='num', scale=(0.01, 'В'), screens=[(136, '1,36 В', 9)],
          steps=[3, 6], materials=[5, 9], status='🟢'),
