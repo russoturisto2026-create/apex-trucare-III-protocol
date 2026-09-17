@@ -119,7 +119,8 @@ def main():
                 if v is None:
                     continue
                 obs_cmd.add(v); last = (ts, v, pl)
-            elif k == 'ANS' and len(f) > 8 and f[3] == 0xA3 and f[4] == s['obj'] and f[5] == 0xAA:
+            elif (k == 'ANS' and len(f) > 8 and f[3] == 0xA3 and f[4] == s['obj']
+                  and (s.get('records') or f[5] == 0xAA)):
                 pl = f[6:-2]; v = getv(pl, s['off'], s['size'], s.get('mask'))
                 if v is None:
                     continue

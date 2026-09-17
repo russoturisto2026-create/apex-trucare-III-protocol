@@ -55,7 +55,7 @@ def status_cell(fd):
 
 
 def pos_st(s):
-    typ = {1: 'u8', 2: 'u16LE', 4: 'u32LE', 6: '6 байт'}[s['size']]
+    typ = {1: 'u8', 2: 'u16LE', 4: 'u32LE'}.get(s['size'], f"{s['size']} байт")
     rng = f'{s["off"]}' if s['size'] == 1 else f'{s["off"]}..{s["off"] + s["size"] - 1}'
     return f'{rng} ({typ})'
 
@@ -153,7 +153,8 @@ def objects_table(obj, idx):
 
 def research_objects():
     lines = []
-    for obj, title, length, sec in ((0x00, 'основной статус', 88, '§4.1'), (0x0C, 'краткий статус', 20, '§4.2')):
+    for obj, title, length, sec in ((0x00, 'основной статус', 88, '§4.1'), (0x0C, 'краткий статус', 20, '§4.2'),
+                                    (0x21, 'журнал болюсов (одна запись)', 14, '§4.4')):
         fs = [f for f in F.FIELDS if f['st']['obj'] == obj]
         cov = set()
         for f in fs:
@@ -184,6 +185,7 @@ def render(name):
         'commands': table_commands,
         'a3_00': lambda: table_status(0x00),
         'a3_0c': lambda: table_status(0x0C),
+        'a3_21': lambda: table_status(0x21),
         'a3_00_unknown': lambda: unknown_ranges(0x00, 88),
         'a3_0c_unknown': lambda: unknown_ranges(0x0C, 20),
         'a1_32': lambda: table_cmd(0x32),
