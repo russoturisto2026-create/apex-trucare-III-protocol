@@ -7,7 +7,7 @@
 
 Что проверяется для каждого поля:
   СВЯЗЬ     — статус (a3) совпадает с последней командой (a1) по правилу rel; расхождение, не
-              исправленное следующим кадром статуса, — ошибка
+              исправленное следующим кадром статуса, — ошибка (у полей pump_side — смена на помпе)
   ЗНАЧЕНИЯ  — каждое наблюдённое значение описано; каждое описанное значение enum/bool
               подтверждено эфиром или пунктом меню (со скриншотом)
   МЕНЮ      — подписи значений enum совпадают с пунктами меню по порядку
@@ -112,7 +112,7 @@ def main():
         obs_cmd, obs_st = set(), set()
         last = None           # (ts, cmd_val, cmd_pl)
         pending = None        # (ts, expected, got)
-        n_match = 0; mism = []
+        n_match = 0; mism = []; pump_changes = []
         for ts, k, f in win:
             if c and k == 'CMD' and len(f) > 18 and f[3] == 0xA1 and f[4] == c['obj']:
                 pl = f[18:-2]; v = getv(pl, c['byte'], c['size'], c.get('mask'))
@@ -133,7 +133,11 @@ def main():
                 exp = rel_expected(fd, last[1], last[2], pl)
                 if pending is not None:
                     if v != pending[1]:
-                        mism.append(pending)
+                        if fd.get('pump_side') and v == pending[2]:
+                            pump_changes.append((pending[0], pending[1], v))
+                            last = (last[0], v, last[2]); exp = v
+                        else:
+                            mism.append(pending)
                     pending = None
                 if v == exp:
                     n_match += 1
@@ -150,6 +154,8 @@ def main():
         else:
             print(f'  статус a3/{s["obj"]:02x} off{s["off"]}: '
                   f'{sorted(obs_st) if len(obs_st) < 12 else "%d значений" % len(obs_st)}')
+        for ts, was, now in pump_changes:
+            print(f'  смена на помпе в {local_dt(ts):%d.%m %H:%M:%S}: {was} → {now} (без команды приложения)')
         for ts, exp, got in mism:
             err(fid, f'связь нарушена в {local_dt(ts):%d.%m %H:%M:%S}: ожидалось {exp}, в статусе {got}')
 
