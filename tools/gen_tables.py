@@ -147,18 +147,20 @@ def window_frames():
     return _FRAMES
 
 
-def objects_table(obj, idx):
-    """Побайтовая карта объекта a3/obj по кадрам окна; idx — показываемая запись."""
+def objects_table(obj, idx, cls=0xA3):
+    """Побайтовая карта объекта cls/obj по кадрам окна; idx — показываемая запись."""
     import object_map as OM
-    fs = [f for ts, k, f in window_frames() if k == 'ANS' and len(f) > 8 and f[3] == 0xA3 and f[4] == obj]
+    fs = [f for ts, k, f in window_frames() if k == 'ANS' and len(f) > 8 and f[3] == cls and f[4] == obj]
+    if not fs:
+        return 'В окне исследования кадров нет.'
     idxs = sorted({f[5] for f in fs})
     pls = [f[6:-2] for f in fs if f[5] == idx]
     L = min(len(p) for p in pls)
     var = {o for o in range(L) if len({p[o] for p in pls}) > 1}
-    b = dict(pls=pls, sample=pls[-1][:L], var=var, known=OM.known_for(0xA3, obj), L=L, idxs=idxs)
+    b = dict(pls=pls, sample=pls[-1][:L], var=var, known=OM.known_for(cls, obj), L=L, idxs=idxs)
     note = f', показана запись idx{idx:02x}' if len(idxs) > 1 else ''
     head = f'Кадров записи в окне: {len(pls)}{note}; пример — последний кадр; C/V — по всем кадрам записи.'
-    return OM.md(0xA3, obj, b).replace('\n', NL) + NL + NL + head
+    return OM.md(cls, obj, b).replace('\n', NL) + NL + NL + head
 
 
 def research_objects():
@@ -202,6 +204,13 @@ def render(name):
         'a3_27': lambda: table_status(0x27),
         'a3_26': lambda: table_status(0x26),
         'obj_a3_06': lambda: objects_table(0x06, 0x00),
+        'obj_a3_02': lambda: objects_table(0x02, 0x00),
+        'obj_a1_55': lambda: objects_table(0x55, 0xAA, 0xA1),
+        'obj_a1_a0': lambda: objects_table(0xA0, 0xAA, 0xA1),
+        'obj_a1_a1': lambda: objects_table(0xA1, 0xAA, 0xA1),
+        'obj_a1_aa': lambda: objects_table(0xAA, 0xAA, 0xA1),
+        'obj_a1_a5': lambda: objects_table(0xA5, 0xAA, 0xA1),
+        'obj_a5_03': lambda: objects_table(0x03, 0x00, 0xA5),
         'a3_0a': lambda: table_status(0x0A),
         'a3_0b': lambda: table_status(0x0B),
         'a3_07': lambda: table_status(0x07),

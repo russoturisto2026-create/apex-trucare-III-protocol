@@ -14,6 +14,11 @@ import fields as F
 
 def known_for(cls, obj):
     """Разобранные поля объекта — из реестра tools/fields.py: (offset, size, подпись, кодирование, статус)."""
+    if cls == 0xA1:  # кадры от помпы класса A1 — из списка ANSWERS
+        for a in getattr(F, 'ANSWERS', []):
+            if a['code'] == obj:
+                return [(0, 2, a['purpose'], a['payload'], a['status'])]
+        return []
     if cls != 0xA3:
         return []
     out = []
