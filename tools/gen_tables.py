@@ -194,6 +194,7 @@ def render(name):
         'a3_0a': lambda: table_status(0x0A),
         'a3_0b': lambda: table_status(0x0B),
         'a3_07': lambda: table_status(0x07),
+        'a3_31': lambda: table_status(0x31),
         'obj_a3_27': lambda: objects_table(0x27, 0x00),
         'obj_a3_01': lambda: objects_table(0x01, 0x00),
         'a3_00_unknown': lambda: unknown_ranges(0x00, 88),
