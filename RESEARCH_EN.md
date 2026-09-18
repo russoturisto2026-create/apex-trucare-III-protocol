@@ -109,8 +109,7 @@ Generated:
   after writing settings — a repeated read of `a3/00`, `a3/0c` (Step 028).
 
 ### Open questions
-- `a3/00`: unparsed offsets — PROTOCOL_EN.md §4.1; off0 — hypothesis "battery indicator" (verification
-  at stable ≤1.33 V).
+- `a3/00`: unparsed offsets — PROTOCOL_EN.md §4.1.
 - `a3/0c`: 16 of 20 bytes unparsed.
 - `a1/12`, `a1/33` — purpose not established; `a1/31` (set time) needs a second observation within the window.
 - `a1/00` — which profile is addressed; correspondence of `a3/08` records to profiles.

@@ -267,9 +267,6 @@ The table is generated from the `tools/fields.py` registry and verified against 
 **Unparsed offsets** (24 of 88 bytes): 18..19, 22..23, 56..75 — byte-by-byte in `OBJECTS_EN.md`.
 <!-- /gen:a3_00_unknown -->
 
-**off0** is described in the table as a hypothesis (🟡): battery indicator by voltage steps; the
-verification condition is given in the same place.
-
 ### 4.2. Fields of object `a3/0c` (brief status, 20 bytes of data)
 <!-- gen:a3_0c -->
 | Offset | Field | Encoding | Command | Status |
