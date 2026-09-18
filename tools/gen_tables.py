@@ -171,7 +171,7 @@ def research_objects():
               0x0B: ('последняя завершённая ВБС', '§4.8'), 0x07: ('калькулятор болюса', '§4.9'),
               0x26: ('дневные дозы (10 дней)', '§4.10'), 0x06: ('дневные дозы (длинная история)', '§4.10'),
               0x31: ('версии прошивки и протокола', '§4.11'), 0x01: ('подробный журнал болюсов', '§4.4'),
-              0x04: ('история заправок', '§4.15'),
+              0x04: ('история заправок', '§4.15'), 0x03: ('история тревог', '§4.16'),
               0x08: ('базальные профили A–H', '§4 (каталог)')}
     lens, recs = {}, {}
     for ts, k, f in window_frames():
@@ -230,6 +230,7 @@ def render(name):
         'obj_a3_06': lambda: objects_table(0x06, 0x00),
         'obj_a3_02': lambda: objects_table(0x02, 0x00),
         'obj_a3_04': lambda: objects_table(0x04, 0x00),
+        'obj_a3_03': lambda: objects_table(0x03, 0x00),
         'obj_a1_55': lambda: objects_table(0x55, 0xAA, 0xA1),
         'obj_a1_a0': lambda: objects_table(0xA0, 0xAA, 0xA1),
         'obj_a1_a1': lambda: objects_table(0xA1, 0xAA, 0xA1),
@@ -241,6 +242,7 @@ def render(name):
         'a3_07': lambda: table_status(0x07),
         'a3_31': lambda: table_status(0x31),
         'a3_04': lambda: table_status(0x04),
+        'a3_03': lambda: table_status(0x03),
         'obj_a3_27': lambda: objects_table(0x27, 0x00),
         'obj_a3_01': lambda: objects_table(0x01, 0x00),
         'a3_00_unknown': lambda: unknown_ranges(0x00, 88),
