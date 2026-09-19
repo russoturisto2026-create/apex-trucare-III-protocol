@@ -25,6 +25,7 @@ organize it.
 | `MATERIALS_EN.md` | Registry of source materials: No. → type → description → step → archive. |
 | `user_agreement.md` | Recorded version of the app's license agreement. |
 | `legal_EN.md` | Legal grounds: cross-check of the agreement against the scope of the research, a declaration of non-contradiction. |
+| `DISCLAIMER_EN.md` | Disclaimer: the protocol description may contain inaccuracies; provided "as is", without warranty. |
 | `APP_MENU.md` | Map of the app's capabilities (menu → protocol objects → extraction groups). |
 | `OBJECTS_EN.md` | Intermediate map of response-object parsing (byte by byte: what has been decoded). |
 | `.claude/skills/apex-device/` | Skill for connecting to the test bench and capturing materials (HCI, screenshots). |
