@@ -50,8 +50,10 @@ not edited by hand.
 | 50 | `00` | V | pump language | 0=Russian, 1=English | 🟢 |
 | 51 | `00` | V | TBR active | 0=no, 1=yes | 🟢 |
 | 52..55 | `ce320400` | V | reservoir remaining | × 0.001 U | 🟢 |
-| 56..57 | `0000` | C | — | u16LE=0 | 🔲 |
-| 58..59 | `0000` | C | — | u16LE=0 | 🔲 |
+| 56 | `00` | C | active alarm 1 — code | alarm code as in `a3/03`; `00` — none (assumption) | 🟡 |
+| 57 | `00` | C | active alarm 1 — flag | `01` while the slot is taken (assumption) | 🟡 |
+| 58 | `00` | C | active alarm 2 — code | a second alarm active at the same time (assumption) | 🟡 |
+| 59 | `00` | C | active alarm 2 — flag | `01` while the slot is taken (assumption) | 🟡 |
 | 60..61 | `0000` | C | — | u16LE=0 | 🔲 |
 | 62..63 | `0000` | C | — | u16LE=0 | 🔲 |
 | 64..65 | `0000` | C | — | u16LE=0 | 🔲 |
@@ -256,7 +258,8 @@ Daily doses, 38 days; same structure as `a3/26` (§4.9).
 
 ### Object a5/03 — "heartbeat"
 An unsolicited frame `aa 06 00 a5 03 00` + CRC `80 c2`, no data. 250 frames in the window, period 180.0 ± 0.2 s,
-the frame is unchanged (PROTOCOL_EN.md §2.5, §4; RESEARCH_EN.md Step 028).
+the frame is unchanged (PROTOCOL_EN.md §2.5, §4; RESEARCH_EN.md Step 028). The object byte is presumably the heartbeat
+period in minutes, set by command `a1/33` (🟡).
 
 ## Alarm history — `a3/03`
 
@@ -265,7 +268,7 @@ the frame is unchanged (PROTOCOL_EN.md §2.5, §4; RESEARCH_EN.md Step 028).
 | off | example | C/V | field | encoding/value | status |
 |---|---|---|---|---|---|
 | 0..5 | `1a090e0c0a00` | C | alarm history — time | `YY MM DD HH MM SS` (byte = value); seconds are `00` — the record has minute resolution | 🟢 |
-| 6..7 | `0d00` | C | alarm history — code | 1=other (not cross-checked), 2=other (not cross-checked), 3=Button error, 5=Battery depleted, 8=other (not cross-checked), 13=Reservoir empty | 🟢 |
+| 6..7 | `0d00` | C | alarm history — code | 1=low battery (🟡), 2=blood glucose reminder (🟡), 3=Button error, 5=Battery depleted, 8=no delivery, occlusion (🟡), 13=Reservoir empty, 14=Daily limit exceeded (🟡, screen label — #84); 🟡 — assumptions | 🟢 |
 
 Log frames in the window: 3, record idx00 shown; the example is the latest frame; C/V is across all log frames.
 <!-- /gen:obj_a3_03 -->

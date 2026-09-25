@@ -209,7 +209,7 @@ Class `0xA5` (unsolicited frames):
 
 | Code | Periodicity | Frame | Purpose | Status |
 |---|---|---|---|---|
-| `0x03` | 180.0 ± 0.2 s | `aa0600a50300` + CRC `80c2` | pump "heartbeat," payload constant; 250 frames over the 12.5 h window | 🟢 — Steps 005, 028 |
+| `0x03` | 180.0 ± 0.2 s | `aa0600a50300` + CRC `80c2` | pump "heartbeat," payload constant; 250 frames over the 12.5 h window. The object byte (`03`) is the heartbeat period in minutes, set by command `a1/33` (🟡, assumption) | 🟢 — Steps 005, 028 |
 
 ### 4.1. Fields of object `a3/00` (main status, 88 bytes of data)
 Analysis is conducted within the research window **from 16:34 onward** (RESEARCH_EN.md Step 007);
@@ -253,6 +253,10 @@ The table is generated from the `tools/fields.py` registry and verified against 
 | 50 (u8) | pump language | `0`=Russian; `1`=English (menu item order, #31) | `a1/32` [0, bit `0x40`] | 🟢 — steps 013, 020; #16, #17, #30, #31, #37 |
 | 51 (u8) | TBR active | `0`=no; `1`=yes | — | 🟢 — steps 024; #38, #39; 1 after `a1/02`; 0 after `a1/05` (cancel) |
 | 52..55 (u32LE) | reservoir remaining | × 0.001 U | — | 🟢 — steps 007; #6, #8, #9, #38, #39 |
+| 56 (u8) | active alarm 1 — code | alarm code as in `a3/03` (§4.16); `00` — none | — | 🟡 — assumption |
+| 57 (u8) | active alarm 1 — flag | `01` while the slot is taken, `00` when empty | — | 🟡 — assumption |
+| 58 (u8) | active alarm 2 — code | a second alarm active at the same time | — | 🟡 — assumption |
+| 59 (u8) | active alarm 2 — flag | `01` while the slot is taken | — | 🟡 — assumption |
 | 76..77 (u16LE) | current basal rate (per profile) | × 0.025 U/h; `ff ff` — delivery stopped | — | 🟢 — steps 007, 024, 026, 027; #8, #9, #38, #42, #43, #44, #45; value of the active profile's current half-hour interval (`a3/08` record = off12; Step 043): 20 (0.5) from 16:00, 36 (0.9) from 00:00, 29 (0.725) from 05:00 after the profile write; unchanged during a TBR |
 | 78..79 (u16LE) | time of last delivery stop | byte off78 — hours, off79 — minutes (pump time); written by the stop command `a1/21 01`, unchanged on start | — | 🟢 — steps 027; #44, #45; in the window: 02:25 (stop before the window, 09.16 02:25:20) → 04:48 (stop 09.17 04:48:43); before the window — 7 more stops with the same rule |
 | 80..81 (u16LE) | TBR — value | meaning depends on type (byte[0]): `01` — U/h in steps of 0.025; `00` — percent. In `a3/00` off80 — the resulting rate, 0.025 U: at `01` equal to the value, at `00` = ⌊off76 × % / 100⌋ | `a1/02` [2..3 (u16LE)] (per the rule, see encoding) | 🟢 — steps 024; #38, #39; rounding down verified on one value (36 × 113 % = 40.68 → 40) |
@@ -264,7 +268,7 @@ The table is generated from the `tools/fields.py` registry and verified against 
 **IOB** (active insulin) is not found in `a3/00` → presumably computed by the app (🟡).
 
 <!-- gen:a3_00_unknown -->
-**Unparsed offsets** (24 of 88 bytes): 18..19, 22..23, 56..75 — byte-by-byte in `OBJECTS_EN.md`.
+**Unparsed offsets** (20 of 88 bytes): 18..19, 22..23, 60..75 — byte-by-byte in `OBJECTS_EN.md`.
 <!-- /gen:a3_00_unknown -->
 
 ### 4.2. Fields of object `a3/0c` (brief status, 20 bytes of data)
@@ -489,13 +493,16 @@ table is from the registry.
 Log of pump alarms; read when opening "Home → History → Alarm History." Record of 8 bytes: 0..5 —
 time `YY MM DD HH MM SS` (seconds `00`, per-minute); 6..7 — alarm code (u16LE). Codes cross-checked
 against the screen: `13` — "Reservoir empty," `3` — "Button error," `5` — "Battery depleted" (Step
-055, #83); code `1` occurred without an on-screen label. The table is from the registry.
+055, #83; `3` — also the record of 09.25 16:27, #84); `14` — "Daily limit exceeded" (screen label, #84, 🟡); code `1`
+occurred without an on-screen label. Assumptions (🟡): `1` — low battery, `2` — blood glucose reminder, `8` — no
+delivery (occlusion). The alarms active at this moment are presumably in `a3/00` off56..59 (§4.1, 🟡). The table
+is from the registry.
 
 <!-- gen:a3_03 -->
 | Offset | Field | Encoding | Command | Status |
 |---|---|---|---|---|
 | 0..5 (6 bytes) | alarm history — time | `YY MM DD HH MM SS` (byte = value); seconds `00` — record is per-minute | — | 🟢 — steps 055; #82, #83; records matched the "Alarm History" screen by date and time (09.14 12:10, 09.14 08:54, 09.10 16:40/16:38/16:36/16:33, 09.10 14:36, 09.10 13:48) |
-| 6..7 (u16LE) | alarm history — code | `1`=other (not verified); `2`=other (not verified); `3`=Button error; `5`=Battery depleted; `8`=other (not verified); `13`=Reservoir empty | — | 🟢 — steps 055; #82, #83; alarm code; cross-checked against the screen: 13 = reservoir empty, 3 = button error, 5 = battery depleted; codes 1, 2, 8 do not appear in the visible part of the screen — their purpose was not verified |
+| 6..7 (u16LE) | alarm history — code | `1`=low battery (🟡); `2`=blood glucose reminder (🟡); `3`=Button error; `5`=Battery depleted; `8`=no delivery, occlusion (🟡); `13`=Reservoir empty; `14`=Daily limit exceeded (🟡, screen label — #84) | — | 🟢 — steps 055; #82, #83, #84; alarm code; cross-checked against the screen: 13 = reservoir empty, 3 = button error (and 09.25 16:27, #84), 5 = battery depleted; 14 — by the screen label of 09.22 22:40–22:41 (#84, 🟡); codes 1, 2, 8 are assumptions (🟡, not verified) |
 <!-- /gen:a3_03 -->
 
 ### 4.14. What is not present in the pump's frames
@@ -529,7 +536,7 @@ identity block `<identity>` (§2.1).
 | `0x21` | 1 byte: `01` — stop, `00` — start | stop / start delivery | 🟢 — steps 027; after `01`: `a3/00` off76..77 = `ff ff`, off78..79 = the stop time, screen "Stopped"; after `00`: off76 = the profile interval's rate; before the window the app repeated `00` after 2 and 4 min |
 | `0x31` | 6 bytes — time `YY MM DD HH MM SS` | set pump time | 🟢 — steps 009, 038; three observations in the window: 09.16 16:52:06, 09.17 20:52:08 (automatically on reconnect after a phone reboot), and 09.17 23:42:43 (manually, Step 038) — payload = phone time at the moment of sending, reflected in `a3/00` off44..49; before the window — 16:22:20 |
 | `0x32` | 16 bytes — settings block (§5.1) | write pump settings | 🟢 — steps 009, 011, 013, 034 |
-| `0x33` | `03 00` | not established (response — acknowledgment) | 🟡 |
+| `0x33` | `MM 00` — MM = heartbeat period, min (the app sends `03 00`) | set the heartbeat period: the pump writes MM into the object byte of the `a5` frame and keeps the value across connections (response — acknowledgment) | 🟡 — assumption |
 | `0x34` | 16 bytes — sound block (§5.2) | sound mode and its step | 🟢 — steps 011, 016; the app sends `a1/34` together with `a1/32` on any settings change |
 | `0x35` | 6 bytes — new Bluetooth password in an internal (non-ASCII) representation; value not given (`<password>`) | change Bluetooth password | 🟢 — steps 052; 09.18 05:42:52 "Danger Zone → Change Password"; acknowledgment `a1/55`; after the command the app reconnected and authorized with the new password (see §3.3). The password bytes are not decoded — recovering the secret is outside the scope of this work (rule 5) |
 <!-- /gen:commands -->
@@ -611,7 +618,7 @@ Based on frames from the research window (RESEARCH_EN.md, Step 028):
 - **Response delay** (across the whole window, Step 051): command `a1` → acknowledgment — median
   **186 ms** (min 67, 95th percentile 489, max 539 ms; 177 pairs); read `a3` → first response frame
   — median **139 ms** (min 51, 95th percentile 189, max 1187 ms; 3943 pairs). 🟢
-- **"Heartbeat"** `a5/03` — unsolicited, every 180 s (§4). 🟢
+- **"Heartbeat"** `a5/03` — unsolicited, every 180 s (§4). 🟢 The period is presumably set by command `a1/33`; the object byte of the frame = the period in minutes (🟡).
 - **Bolus completion** — unsolicited notification `a1/aa` with the final delivered dose (u16LE,
   0.025 U); arrives 1–3 s after the last `a1/a0` for a simple bolus and after the last `a1/a1` for
   an extended one. 🟢 — Steps 045, 047 (six simple boluses on 09.18 02:18/02:28 and an extended
